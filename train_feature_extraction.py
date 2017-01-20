@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from alexnet import AlexNet
 
 # TODO: Load traffic signs data.
-training_file = 'train_traffic.p'
+training_file = 'train.p'
 with open(training_file, mode='rb') as f:
     train = pickle.load(f)
 X_train, y_train = train['features'], train['labels']
@@ -48,7 +48,7 @@ logits   = tf.add(tf.matmul(fc7, weights8), biases8)
 # TODO: Define loss, training, accuracy operations.
 # HINT: Look back at your traffic signs project solution, you may
 # be able to reuse some the code.
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer()
