@@ -15,19 +15,20 @@ print("Data Loaded.", X_train.shape, nb_classes)
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
-X_train, X_validation, y_train, y_validation = train_test_split(X_train, y_train, test_size=0.2, random_state=15)
-print("Final Training   size: ", len(X_train))
-print("Final Validation size: ", len(X_validation))
+X_train, X_validation, y_train, y_validation = train_test_split(X_train, y_train, test_size=0.33, random_state=0)
 
 X_train, y_train = shuffle(X_train, y_train)
-print("Data shuffled")
+
+
 
 # TODO: Define placeholders and resize operation.
-x = tf.placeholder(tf.float32, (None, 32, 32, 3))
-y = tf.placeholder(tf.int32, (None))
-one_hot_y = tf.one_hot(y, nb_classes)
+features = tf.placeholder(tf.float32, (None, 32, 32, 3))
+labels = tf.placeholder(tf.int64, (None))
+resized = tf.image.resize_images(features, (227, 227))
+#one_hot_y = tf.one_hot(y, nb_classes)
 
-resized = tf.image.resize_images(X_train, (227, 227))
+print("Final Training   size: ", resized)
+print("Final Validation size: ", len(X_validation))
 
 # TODO: pass placeholder as first argument to `AlexNet`.
 fc7 = AlexNet(resized, feature_extract=True)
@@ -48,14 +49,15 @@ logits   = tf.add(tf.matmul(fc7, weights8), biases8)
 # HINT: Look back at your traffic signs project solution, you may
 # be able to reuse some the code.
 BATCH_SIZE = 64
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, one_hot_y)
+cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer()
 training_operation = optimizer.minimize(loss_operation, var_list=[weights8, biases8])
 
 
 # set up training evaluation system
-correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))
+predictions = tf.argmax(logits, 1)
+correct_prediction = tf.equal(predictions, labels)
 accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 def evaluate(X_data, y_data, sess):
@@ -63,7 +65,8 @@ def evaluate(X_data, y_data, sess):
     total_accuracy = 0
     for offset in range(0, num_examples, BATCH_SIZE):
         batch_x, batch_y = X_data[offset:offset+BATCH_SIZE], y_data[offset:offset+BATCH_SIZE]
-        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y})
+        print(batch_x.shape)
+        accuracy = sess.run(accuracy_operation, feed_dict={features: batch_x, labels: batch_y})
         total_accuracy += (accuracy * len(batch_x))
     return total_accuracy / num_examples
 
@@ -85,7 +88,8 @@ with tf.Session() as sess:
             batch_i += 1
             end = offset + BATCH_SIZE
             batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
+            print(batch_x.shape)
+            sess.run(training_operation, feed_dict={features: batch_x, labels: batch_y})
             print("Batch: ", batch_i)
             if batch_i > 50:
                 break
